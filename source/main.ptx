@@ -5,15 +5,359 @@
   <xi:include href="./docinfo.ptx" />
 
   <book xml:id="my-great-book">
-    <title>My Great Book</title>
-    <subtitle>An example to get you started</subtitle>
+    <title>Introduction to XML for PreTeXt Users</title>
+    <subtitle>A quick walkthrough to get you started</subtitle>
 
     <!-- Include frontmatter -->
     <xi:include href="./frontmatter.ptx" />
 
     <!-- Include chapters -->
-    <xi:include href="./ch-chapter-title.ptx" />
+    <chapter>
+      <title>Understanding XSL Conversion</title>
 
+      <introduction>
+        <p>
+          First, obtain a copy of <c>xlstproc</c>. 
+          For windows, install <c>WSL</c> as in the documentation. 
+        </p>
+      </introduction>
+
+      <section>
+        <title>Two types of files</title>
+        
+          <p>
+            Create two text files, <c>exam.xsl</c> and <c>exam3.xml</c>.
+            In 
+          </p>
+          <p>
+            The stylesheet <c>exam.xsl</c> will contain the program for converting the contents of <c>exam3.xml</c>, which is the input. 
+            Each file requires a specific format:
+            <dl>
+              <li>
+                <title>Stylesheet file</title>
+                <p>
+                  There must be a single outermost environment, which requires a very specific format. 
+                  <cd>
+                    <cline>&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"&gt;</cline>
+                    <cline>&lt;/xsl:stylesheet&gt;</cline>
+                  </cd>
+                </p>
+              </li>
+              <li>
+                <title>XML Input</title>
+                <p>
+                  There must be a single outermost environment.  It can be anything, but here we pick <c>exam</c> and <c>question</c>.  Again, the elements can have any attributes you like.  Here we use <c>@points</c>
+
+                  <cd>
+                    <cline>&lt;exam&gt;</cline>
+                    <cline> &lt;question points="5"&gt;</cline>
+                    <cline>   What is pi?</cline>
+                    <cline> &lt;/question&gt;</cline>
+                    <cline> &lt;question&gt;</cline>
+                    <cline>   2+2?</cline>
+                    <cline> &lt;/question&gt;</cline>
+                    <cline> &lt;question points="20"&gt;</cline>
+                    <cline>   Do You &lt;em&gt;Love&lt;/em&gt; Pretext?</cline>
+                    <cline> &lt;/question&gt;</cline>
+                    <cline>&lt;/exam&gt;</cline>
+                  </cd>
+                </p>
+              </li>
+            </dl>
+          </p>
+        </section>
+
+        <section>
+          <title>A first XML stylesheet</title>
+          <p>
+            Our first goal is to create a stylesheet that ignores the content of <c>exam3.xml</c>.
+          </p>
+          <p>
+            <ul>
+              <li>
+                <p>
+                  The xml environment <c>xsl:template</c> defines a template.  
+                  At each point in the conversion, <c>xsltproc</c> uses its internal logic to select which template it should be using, based on the <c>match</c> attributes of the templates defined.
+                  <ul>
+                    <li>
+                      <p>
+                        <c>match="*"</c> matches everything, 
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        <c>match="/"</c> matches only the root noted, 
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        <c>match="question"</c> will match <c>question</c> environments. 
+                      </p>
+                    </li>
+                  </ul>
+                  
+                </p>
+              </li>
+              <li>
+                <p>
+                  The xml environment  <c>xsl:text</c> instructs <c>xsltproc</c> to ouptut the contents of the environment.  
+                </p>
+              </li>
+            </ul>
+          </p>
+          <p>
+            The command 
+          </p>
+          <p>
+            Add the following code to <c>exam.xsl</c>
+            <cd>
+              <cline> &lt;xsl:template match="/"&gt;</cline>
+              <cline>   &lt;xsl:text&gt;</cline>
+              <cline>     Hello World!</cline>
+              <cline>   &lt;/xsl:text&gt;</cline>
+              <cline> &lt;/xsl:template &gt;</cline>
+            </cd>
+          </p>
+          <p>
+            Now run <c>xsltproc exam.xsl exam3.xml</c>.  Look at what is printed. 
+          </p>
+        </section>
+
+        <section>
+          <title>Applying Default Templates</title>
+          <p>
+            <ul>
+              <li>
+                <p>
+                  The <c>xml:apply-templates</c> environment recursively calls the stylesheet.  Under most circumstances, the recursive call is on some subset of the children of the current node of the document tree. 
+                  The exact nodes that are matched is specified by the <c>select</c> attribute. 
+                </p>
+              </li>
+              <li>
+                <p>
+                  <ul>
+                    <li>
+                      <p>
+                        <c>select="*"</c> matches all children of the current node that are elements (but excludes text nodes and attributes).
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        <c>select="exam"</c> matches only children of the current node that are elements of type "exam".
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        <c>select="text()"</c> selects only text nodes (but excludes element nodes and attributes)
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        <c>select="node()"</c> selects all children including text ones (but excludes attributes).
+                        Note that <c> "node()"</c> is the same as <c>"*|text"</c>
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        Using <c>&lt;apply-templates /&gt;</c> with no <c>select</c> attribute is equivalent to using <c>select="node()"</c> 
+
+                      </p>
+                    </li>
+                  </ul>
+                </p>
+              </li>
+            </ul>
+          </p>
+          <p>
+            In <c>exam.xsl</c>, delete everything inside the <c>&lt;xsl:template match="/"&gt;</c> tags, and replace it with <c>&lt;xsl:apply-templates/&gt;</c>.
+            <c>exam.xsl</c> should now have the following contents: 
+            <cd>
+              <cline>&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"&gt;</cline>
+              <cline> &lt;xsl:template match="/"&gt;</cline>
+              <cline>   &lt;xsl:apply-templates select="*" /&gt;</cline>
+              <cline> &lt;/xsl:template &gt;</cline>
+              <cline>&lt;/xsl:stylesheet&gt;</cline>
+            </cd>
+          </p>
+          <p>
+            Now run <c>xsltproc exam.xsl exam3.xml</c>.  Look at what is printed. 
+          </p>
+        </section>
+
+        <section>
+          <title>Additional Templates</title>
+          
+          <p>
+            <c>xsltproc</c> has default templates, which are matched if nothing in the stylesheet apply.  
+            To get your desired output, we will create our own templates that define output behaviour for the environments where they match.
+            (If multiple templates match, the more specific template is generally used). 
+            <ul>
+              <li>
+                <p>
+                  <ul>
+                    <li>
+                      <p>
+                        You can use <c>xsl:text</c> to enter fixed text that should appear in your ouput.  For example, if you are outputting a  <latex />  document, you may want it to begin with the text string <c>\documentclass{article}\begin{document}</c> and to end with the text string <c>\end{document}</c>
+                      </p>
+                      <p>
+                        <c>&amp;#xa;</c> inserts ASCII for a line break in the output.
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        You can use <c>xsl:number</c> to insert the (output of) a counter for the current object.
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        You can use <c>xsl:value-of</c> to insert the value of an attribute for the current element.  Use <c>select="@points"</c> will have this output the value of the points attribute of the current element.
+                      </p>
+                    </li>
+                    <li>
+                      <p>
+                        Not every element will have all attributes defined.  You should check if the attribute is defined before you reference it. 
+                        The code below will ensure that the points attribute is defined before trying to insert it.
+                        <cd>
+                          <cline>&lt;xsl:if test="@points"&gt;</cline>
+                          <cline> &lt;xsl:value-of select="@points"&gt;&lt;/xsl:value-of&gt;</cline>
+                          <cline>&lt;/xsl:if&gt;</cline>
+                        </cd>
+                      </p>
+                    </li>
+                  </ul>
+                </p>
+              </li>
+            </ul>
+          </p>
+          <p>
+            Add three templates to <c>exam.xsl</c> that match "exam," and "question," and "em".
+            <ul>
+              <li>
+                <p>
+                  For the exam template, have it insert <latex /> to begin and end a document. 
+                </p>
+              </li>
+              <li>
+                <p>
+                  For the problem template, have it output a question tag, and insert the appropriate number of points. 
+                </p>
+              </li>
+              <li>
+                <p>
+                  For the em template, have it insert <latex /> to emphasize the enclosed text. 
+                </p>
+              </li>
+            </ul>
+          </p>
+
+          <cd>
+            <cline>&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"&gt;</cline>
+            <cline></cline>
+            <cline> &lt;xsl:template match="/"&gt;</cline>
+            <cline>   &lt;xsl:apply-templates select="*" /&gt;</cline>
+            <cline> &lt;/xsl:template &gt;</cline>
+            <cline></cline>
+            <cline> &lt;xsl:template match="exam"&gt;</cline>
+            <cline>   &lt;xsl:text&gt;</cline>
+            <cline>     \begin{document}</cline>
+            <cline>     &amp;#xa; </cline>
+            <cline>   &lt;/xsl:text&gt;</cline>
+            <cline>   &lt;xsl:apply-templates select="*"/&gt;</cline>
+            <cline>   &lt;xsl:text&gt;</cline>
+            <cline>     \end{document}</cline>
+            <cline>     &amp;#xa; </cline>
+            <cline>   &lt;/xsl:text&gt;</cline>
+            <cline> &lt;/xsl:template&gt;</cline>
+            <cline></cline>
+            <cline> &lt;xsl:template match="question"&gt;</cline>                        
+            <cline>   &lt;xsl:text&gt;Question #&lt;/xsl:text&gt;</cline>                        
+            <cline>   &lt;xsl:number/&gt;</cline>                        
+            <cline>   &lt;xsl:if test="@points"&gt;</cline>                        
+            <cline>     &lt;xsl:text&gt; [&lt;/xsl:text&gt;</cline>                        
+            <cline>     &lt;xsl:value-of select="@points"&gt;&lt;/xsl:value-of&gt;</cline>                        
+            <cline>     &lt;xsl:text&gt;]&lt;/xsl:text&gt;</cline>                        
+            <cline>   &lt;/xsl:if&gt;</cline>                        
+            <cline>   &lt;xsl:text&gt;. &lt;/xsl:text&gt;</cline>                        
+            <cline>   &lt;xsl:apply-templates /&gt;</cline>                        
+            <cline>   &lt;xsl:text&gt;&amp;#xa; &lt;/xsl:text&gt;</cline>                        
+            <cline> &lt;/xsl:template&gt;</cline>                        
+            <cline></cline>
+            <cline> &lt;xsl:template match="em"&gt;</cline>
+            <cline>   &lt;xsl:text&gt;\emph{&lt;/xsl:text&gt;</cline>
+            <cline>   &lt;xsl:apply-templates/&gt;</cline>
+            <cline>   &lt;xsl:text&gt;}&lt;/xsl:text&gt;</cline>
+            <cline> &lt;/xsl:template&gt;</cline>
+            <cline>&lt;/xsl:stylesheet&gt;</cline>
+          </cd>
+
+        </section>  
+        <section>
+          <title>Linking Your Stylesheet to PreTeXt</title>
+  
+          <p>
+            You probably want to use your new stylesheet together with an existing <pretext /> stylesheet. 
+            If you are using the CLI, you will need to make edits in two or three three places: placing your stylesheet in the sub directory <c>xsl/</c> of the pretext project, 
+            creating a new build target in <c>project.ptx</c>, and (possibly) creating a new publication file.  
+          </p>
+          <p>
+            <dl>
+              <li>
+                <title>XSL file</title>
+                <p>
+                  Move the stylesheet you have written to the <c>xsl/</c> directory.
+                </p>
+                <p>
+                  You are (probably) writing XSL to extend an existing pretext stylesheet, rather than writing a whole new one from scratch.  
+                  To do this, add a version of the following as the second line of your <c>xsl</c> file.  
+                  <cd>
+                    <cline>&lt;xsl:import href="./core/pretext-html.xsl"/&gt;</cline>
+                  </cd>
+                  The snippet above will extend the <c>pretext-html</c> stylesheet that produces web output.  Use a different stylesheet to extend print, slides, etc.
+                </p>
+              </li>
+              <li>
+                <title>Defining output profile</title>
+                <p>
+                  In <c>project.ptx</c>, you will need to define a new output profile.  To do this, insert the following line.
+                </p>
+                <cd>
+                  <cline>&lt;target  name="new-target" format="custom"  xsl="exam.xsl" /&gt; </cline>
+                </cd>
+                <p>
+                  Use the name of your xsl file in the <c>@xsl</c> attribute of the build profile.
+                </p>
+              </li>
+              <li>
+                <title>Creating new publisher file</title>
+                <p>
+                  You can also (optionally) create a new publisher file which you reference from the new output file above. 
+                </p>
+              </li>
+            </dl>
+          </p>
+        </section>
+        <section>
+          <title>Advanced XSL concepts</title>
+          <p>
+            From a certain perspective, you can think of <c>xsl:</c> commands from an object oriented perspective.  
+          </p>
+          <p>
+            In portions of the pretext xsl, the <c>@mode</c> attribute can be thought of as a function on the element that is selected.  For example, in the <pretext /> stylesheets, the xsl element
+              <cd>
+                <cline> &lt;xsl:apply-templates select="." mode="title-full" /&gt;</cline>
+              </cd>
+            causes the "full" version of the title of the current element to be returned. 
+            To instruct latex to print a bold version of the text, you would instead use
+            <cd>
+              <cline> &lt;xsl:text&gt;\textbf{&lt;/xsl:text&gt;</cline>
+              <cline>   &lt;xsl:apply-templates select="." mode="title-full" /&gt;</cline>
+              <cline> &lt;xsl:text&gt;}&lt;/xsl:text&gt;</cline>
+              </cd>
+          
+          </p>
+        </section>
+    </chapter>
+    
 
     <!-- Include backmatter -->
     <xi:include href="./backmatter.ptx" />
